@@ -1,4 +1,4 @@
-lstar <- function(y,x.0,x.1=x.0,tv,crit=.15,g.opt=NULL,c.opt=NULL,g.vec=NULL,c.vec=NULL,c.restrict=FALSE){
+estar <- function(y,x.0,x.1=x.0,tv,crit=.25,g.opt=NULL,c.opt=NULL,g.vec=NULL,c.vec=NULL,c.restrict=FALSE){
   
   require(minpack.lm)
   
@@ -15,7 +15,7 @@ lstar <- function(y,x.0,x.1=x.0,tv,crit=.15,g.opt=NULL,c.opt=NULL,g.vec=NULL,c.v
   c.rng <- quantile(tv,c(crit,1-crit))
   
   if(is.null(g.opt)){
-    g.opt <- 5
+    g.opt <- 0.5
   }
   
   if(is.null(c.opt)){
@@ -25,14 +25,14 @@ lstar <- function(y,x.0,x.1=x.0,tv,crit=.15,g.opt=NULL,c.opt=NULL,g.vec=NULL,c.v
   glab <- "g1"
   clab <- "c1" 
   
-  trans <- as.numeric((1+exp(-(g.opt/(sig))*(tv-c.opt)))^(-1))
+  trans <- as.numeric((1-exp(-(g.opt/(sig^2))*((tv-c.opt)^2))))
   xb <- cbind(x.0,x.1*trans)
   
   if(is.null(g.vec)){
-    g.vec <- c(1,5,15)
+    g.vec <- c(.5,1,2)
   }
   if(is.null(c.vec)){
-    c.vec <- quantile(tv,c(.3,.5,.7))
+    c.vec <- quantile(tv,c(.4,.5,.6))
   }
   
   res.mat <- matrix(nrow=length(g.vec),ncol=length(c.vec))
@@ -51,13 +51,13 @@ lstar <- function(y,x.0,x.1=x.0,tv,crit=.15,g.opt=NULL,c.opt=NULL,g.vec=NULL,c.v
       x0 <- paste0("x.0[,",1:m.x0,"]*","a",1:m.x0,collapse="+")
       x1 <- paste0("x.1[,",1:m.x1,"]*","b",1:m.x1,collapse="+")
       
-      func <- paste0("((1+exp(-",glab,"/(sig)*(tv-(",clab,"))))^(-1))")
+      func <- paste0("((1-exp(-",glab,"/(sig^2)*((tv-(",clab,"))^2))))")
       fmla <- as.formula(paste0("y ~ ",x0,"+(",x1,")*",func))
       
       if(c.restrict){
-        reg <- tryCatch(nlsLM(fmla,start=b,lower=c(rep(-Inf,length(b)-2),1,c.rng[1]),upper=c(rep(Inf,length(b)-2),100,c.rng[2]),control=nls.control(maxiter=1000,warnOnly=T)),error=function(e) NULL)
+        reg <- tryCatch(nlsLM(fmla,start=b,lower=c(rep(-Inf,length(b)-2),.1,c.rng[1]),upper=c(rep(Inf,length(b)-2),10,c.rng[2]),control=nls.control(maxiter=1000,warnOnly=T)),error=function(e) NULL)
       }else{
-        reg <- tryCatch(nlsLM(fmla,start=b,lower=c(rep(-Inf,length(b)-2),1,-Inf),upper=c(rep(Inf,length(b)-2),100,Inf),control=nls.control(maxiter=1000,warnOnly=T)),error=function(e) NULL)
+        reg <- tryCatch(nlsLM(fmla,start=b,lower=c(rep(-Inf,length(b)-2),.1,-Inf),upper=c(rep(Inf,length(b)-2),10,Inf),control=nls.control(maxiter=1000,warnOnly=T)),error=function(e) NULL)
       }
       
       if(is.null(reg)){
@@ -76,17 +76,17 @@ lstar <- function(y,x.0,x.1=x.0,tv,crit=.15,g.opt=NULL,c.opt=NULL,g.vec=NULL,c.v
   set.seed(1981)
   b <- 0.9*b+rnorm(length(b),0,0.01)
   names(b) <- c(sprintf("a%d",1:m.x0),sprintf("b%d",1:m.x1),glab,clab)
- 
+  
   x0 <- paste0("x.0[,",1:m.x0,"]*","a",1:m.x0,collapse="+")
   x1 <- paste0("x.1[,",1:m.x1,"]*","b",1:m.x1,collapse="+")
   
-  func <- paste0("((1+exp(-",glab,"/(sig)*(tv-(",clab,"))))^(-1))")
+  func <- paste0("((1-exp(-",glab,"/(sig^2)*((tv-(",clab,"))^2))))")
   fmla <- as.formula(paste0("y ~ ",x0,"+(",x1,")*",func))
   
   if(c.restrict){
-    reg <- tryCatch(nlsLM(fmla,start=b,lower=c(rep(-Inf,length(b)-2),1,c.rng[1]),upper=c(rep(Inf,length(b)-2),100,c.rng[2]),control=nls.control(maxiter=1000,warnOnly=T)),error=function(e) NULL)
+    reg <- tryCatch(nlsLM(fmla,start=b,lower=c(rep(-Inf,length(b)-2),.1,c.rng[1]),upper=c(rep(Inf,length(b)-2),10,c.rng[2]),control=nls.control(maxiter=1000,warnOnly=T)),error=function(e) NULL)
   }else{
-    reg <- tryCatch(nlsLM(fmla,start=b,lower=c(rep(-Inf,length(b)-2),1,-Inf),upper=c(rep(Inf,length(b)-2),100,Inf),control=nls.control(maxiter=1000,warnOnly=T)),error=function(e) NULL)
+    reg <- tryCatch(nlsLM(fmla,start=b,lower=c(rep(-Inf,length(b)-2),.1,-Inf),upper=c(rep(Inf,length(b)-2),10,Inf),control=nls.control(maxiter=1000,warnOnly=T)),error=function(e) NULL)
   }
   
   return(list(coef=coef(reg),se=summary(reg)$coefficients[,2],resid=resid(reg),vcov=vcov(reg)))
