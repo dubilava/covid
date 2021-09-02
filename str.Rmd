@@ -1,0 +1,16 @@
+---
+title: "Untitled"
+author: "David Ubilava"
+date: "03/09/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Smooth Transition Regression
+
+given by: $$y_t = \alpha+\beta G(t;\gamma,c)+\varepsilon_t,$$ where $y_t$ is the number of cases in a given day, denoted by $t$, and $G(t;\gamma,c) = (1+\exp(-\gamma(t-c)))^{-1}$ is the *logistic* smooth transition function, bounded by zero and one, where $\gamma > 0$ and $c$ are the 'smoothness' and 'centrality' parameters to be estimated; $\varepsilon_t$ is an error term with the usual assumptions
+
+, such as, for example: $$y_t = \alpha+\beta_1 G_1(t;\gamma_1,c_1)+\beta_2 G_2(t;\gamma_2,c_2)+\varepsilon_t,$$ where $c_2 > c_1$

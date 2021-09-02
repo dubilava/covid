@@ -31,9 +31,6 @@ covid_dt[,`:=`(trend=as.numeric(as.factor(date)),wday=weekdays(date,abbreviate=T
 # order the weekday factors
 covid_dt$wday <- factor(covid_dt$wday,levels=c("Mon","Tue","Wed","Thu","Fri","Sat","Sun"))
 
-# # create the weekday dummies
-# covid_dt <- dummy_cols(covid_dt,select_columns = "wday")
-
 # main model: logistic smooth transition regression of the form: y_t = a + b G(t;g,c)
 # where G(t;g,c)=(1+exp[-g(t-c)/sd(t)])^{-1} is the logistic transition function, 
 # and where g and c are parameters of this logistic transition function.
@@ -56,34 +53,61 @@ Ghat <- ((1+exp(-coefficients(reg_str)["g"]/(sd(covid_dt$trend))*(covid_dt$trend
 # store the fitted values into the dataset
 covid_dt$yhat_str <- coefficients(reg_str)["b"]*Ghat
 
+# generate bootstrap parameters 
+B <- 200
+boot_mat <- matrix(NA,B,length(coefficients(reg_str))) 
+for(i in 1:B){
+  set.seed(i)
+  eboot_str <- sample(residuals(reg_str),length(residuals(reg_str)),replace=T)
+  covid_dt$yboot_str <- round(covid_dt$yhat_str+residuals(reg_str)*sample(c(-1,1),length(residuals(reg_str)),replace=T))
+  boot_str <- nlsLM(yboot_str~b*((1+exp(-g/sd(trend)*(trend-c)))^(-1)),data=covid_dt,start=theta,lower=c(-Inf,.1,-Inf),upper=c(Inf,100,Inf),control=nls.control(maxiter=1000,warnOnly=T))
+  boot_mat[i,] <- coefficients(boot_str)
+}
+
+colnames(boot_mat) <- names(coefficients(boot_str))
 
 # multi-day forecast horizon
 h <- 7
 
 trend_f <- c(as.numeric(max(covid_dt$trend)+1):as.numeric(max(covid_dt$trend)+h))
 
+# point forecast
 Ghat_f <- ((1+exp(-coefficients(reg_str)["g"]/(sd(covid_dt$trend))*(trend_f-coefficients(reg_str)["c"])))^(-1))
 
 ystr_f <- coefficients(reg_str)["b"]*Ghat_f
 
+# bootstrap forecasts
+ystr_b <- matrix(NA,length(ystr_f),B)
+for(i in 1:B){
+  Ghat_b <- ((1+exp(-boot_mat[i,"g"]/(sd(covid_dt$trend))*(trend_f-boot_mat[i,"c"])))^(-1))
+  
+  ystr_b[,i] <- boot_mat[i,"b"]*Ghat_b
+}
+
+ystr_ci <- as.data.table(t(apply(ystr_b,1,quantile,c(.025,.975))))
+colnames(ystr_ci) <- c("lower","upper")
+
 # arrange the dataset to bind together the fitted and forecast values along with the observed data
 nsw_dt <- covid_dt[,.(date,observed=nsw,forecast=yhat_str)]
-nsw_fc <- data.table(date=seq(covid_dt[date==max(date)]$date+1,by="day",length.out=h),observed=NA,forecast=ystr_f)
+nsw_dt[,`:=`(lower=NA,upper=NA)]
+nsw_fc <- data.table(date=seq(covid_dt[date==max(date)]$date+1,by="day",length.out=h),observed=NA,forecast=ystr_f,lower=ystr_ci$lower,upper=ystr_ci$upper)
 
-# bidn the in-sample and out-of-sample segments
+# bind the in-sample and out-of-sample segments
 nsw_cb <- rbind(nsw_dt,nsw_fc) 
 
 # melt to 'long table' for plotting purposes
 nsw_lg <- melt(nsw_cb,id.vars="date")
 
+nsw_lg$variable <- factor(nsw_lg$variable,levels=c("observed","forecast","lower","upper"),labels=c("observed data","point forecast","95% forecast interval (lower bound)","95% forecast interval (upper bound)"))
+
 # plot the graph
 gg_plot <- ggplot(nsw_lg,aes(x=date,y=value,color=variable,linetype=variable))+
   geom_line(size=.6,na.rm=T)+
-  scale_color_manual(values=c("darkgray","steelblue"))+
-  scale_linetype_manual(values=c(1,5))+
+  scale_color_manual(values=c("darkgray","steelblue","indianred","indianred"))+
+  scale_linetype_manual(values=c(1,5,2,2))+
   labs(title="COVID NSW",subtitle=paste("Forecast made on",format(as.Date(max(covid_dt$date)),"%d %b %Y"),"for the subsequent seven days"),x="Date",y="Daily Cases",caption="Source of the data: https://www.covidaustralia.com/cases")+
   theme_classic()+
-  theme(axis.title=element_text(size=12),axis.text=element_text(size=10),legend.title=element_blank(),legend.text=element_text(size=9),legend.position=c(.025,1),legend.justification=c(0,1),plot.caption = element_text(color="darkgray",size=9),plot.subtitle=element_text(size=9))
+  theme(axis.title=element_text(size=12),axis.text=element_text(size=10),legend.title=element_blank(),legend.text=element_text(size=8),legend.position=c(.025,1),legend.justification=c(0,1),plot.caption = element_text(color="darkgray",size=9),plot.subtitle=element_text(size=9),legend.key.size=unit(0.5,"cm"))
 
 # save the figure
 ggsave("covid_star.png",dpi="retina",width=6.5,height=3.5)
@@ -120,7 +144,7 @@ gg_plot <- ggplot(nsw_lg,aes(x=date,y=value,color=variable,linetype=variable))+
   scale_linetype_manual(values=c(1,5,2))+
   labs(title="COVID NSW",subtitle=paste("Forecast made on",format(as.Date(max(covid_dt$date)),"%d %b %Y"),"for the subsequent seven days"),x="Date",y="Daily Cases",caption="Source of the data: https://www.covidaustralia.com/cases")+
   theme_classic()+
-  theme(axis.title=element_text(size=12),axis.text=element_text(size=10),legend.title=element_blank(),legend.text=element_text(size=9),legend.position=c(.025,1),legend.justification=c(0,1),plot.caption = element_text(color="darkgray",size=9),plot.subtitle=element_text(size=9))
+  theme(axis.title=element_text(size=12),axis.text=element_text(size=10),legend.title=element_blank(),legend.text=element_text(size=8),legend.position=c(.025,1),legend.justification=c(0,1),plot.caption = element_text(color="darkgray",size=9),plot.subtitle=element_text(size=9),legend.key.size=unit(0.5,"cm"))
 
 # save the figure
 ggsave("covid_models.png",dpi="retina",width=6.5,height=3.5)
