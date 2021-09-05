@@ -1,8 +1,10 @@
 ---
-title: "Smooth Transition Regression: A Brief Introduction"
+title: 'Smooth Transition Regression: A Brief Introduction'
 author: "David Ubilava"
 date: "03/09/2021"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -30,6 +32,7 @@ g2=8
 c2=670
 
 trend <- 1:1000
+
 G1 <- (1+exp(-g1*(trend-c1)/sd(trend)))^{-1}
 G2 <- (1+exp(-g2*(trend-c2)/sd(trend)))^{-1}
 
