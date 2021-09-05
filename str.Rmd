@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Smooth Transition Regression: A Brief Introduction"
 author: "David Ubilava"
 date: "03/09/2021"
 output: html_document
@@ -11,6 +11,48 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Smooth Transition Regression
 
-given by: $$y_t = \alpha+\beta G(t;\gamma,c)+\varepsilon_t,$$ where $y_t$ is the number of cases in a given day, denoted by $t$, and $G(t;\gamma,c) = (1+\exp(-\gamma(t-c)))^{-1}$ is the *logistic* smooth transition function, bounded by zero and one, where $\gamma > 0$ and $c$ are the 'smoothness' and 'centrality' parameters to be estimated; $\varepsilon_t$ is an error term with the usual assumptions
+Smooth transition (auto)regression belongs to a family or regime-dependent models. In such models, we have two or more regimes. The regimes are 'connected' by some threshold or transition parameters. The connection can be instantaneous or gradual. Smooth transition regression framework offers the option of both, the instantaneous and gradual switch between  the regimes (hence the name). 
 
-, such as, for example: $$y_t = \alpha+\beta_1 G_1(t;\gamma_1,c_1)+\beta_2 G_2(t;\gamma_2,c_2)+\varepsilon_t,$$ where $c_2 > c_1$
+In fitting the nonlinear trend to the daily covid cases data, I use a special, indeed a rather simple, case of the smooth transition regression given by: $$y_t = \alpha+\beta G(t;\gamma,c)+\varepsilon_t,$$ where $y_t$ is the number of cases in a given day, denoted by $t$, and $G(t;\gamma,c) = (1+\exp(-\gamma(t-c)))^{-1}$ is the *logistic* smooth transition function, bounded by zero and one, where $\gamma > 0$ and $c$ are the 'smoothness' and 'centrality' parameters to be estimated; $\varepsilon_t$ is an error term with the usual assumptions
+
+The aforementioned two-regime model can be easily augmented to a multiple-regime model by adding additional transition functions (and, thus, regimes). For example, the following R code will illustrate the fitted values of a three-regime smooth transition regression of the following form: $$y_t = \alpha+\beta_1 G_1(t;\gamma_1,c_1)+\beta_2 G_2(t;\gamma_2,c_2)+\varepsilon_t,$$ where $c_2 > c_1$, and where $\alpha$ is set to zero - a restriction that imposes zero covid cases before the onset of a covid wave.  
+
+```{r echo=TRUE}
+library(data.table)
+library(ggplot2)
+
+a=0
+b1=3200
+b2=-2500
+g1=4
+c1=350
+g2=8
+c2=670
+
+trend <- 1:1000
+G1 <- (1+exp(-g1*(trend-c1)/sd(trend)))^{-1}
+G2 <- (1+exp(-g2*(trend-c2)/sd(trend)))^{-1}
+
+y <- a+b1*G1+b2*G2
+
+dt <- data.table(t=trend,y=y)
+
+gg_plot <- ggplot(dt,aes(x=t,y=y))+
+  geom_line(size=1,color="steelblue")+
+  coord_cartesian(ylim=c(0,3200))+
+  theme_classic()+
+  theme(axis.title = element_text(size=12),axis.text = element_text(size=10))
+
+gg_plot
+
+ggsave("illustration.png",gg_plot,device="png",dpi="retina",width=6.5,height=3.5)
+```
+
+This model offers several benefits:
+
+- In the early stages of the wave, it mimics the exponential trend, which has been a characteristic feature of the covid waves.
+- Each regime is a plateau, connected by a sigmoid-shaped function, which gives it an advantages over the exponential trend function when modeling daily covid cases that inevitably cannot increase indefinitely.
+- It has a flexibility to add as many regimes as needed, to account for reduction of daily covid cases or, indeed, multiple waves.
+- It doesn't restrict the transitions between different regimes to be of similar rate (as illustrated in the graph above).
+
+The model has its caveats. The most important of these, shared by nearly all trend models of similar type, is that it cannot forecast the turning point, and it can only account for the presence of one, at least with a considerable degree of accuracy, when the turning point is 'around the corner.' 

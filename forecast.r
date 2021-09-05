@@ -54,7 +54,7 @@ Ghat <- ((1+exp(-coefficients(reg_str)["g"]/(sd(covid_dt$trend))*(covid_dt$trend
 covid_dt$yhat_str <- coefficients(reg_str)["b"]*Ghat
 
 # generate bootstrap parameters 
-B <- 200
+B <- 1000
 boot_mat <- matrix(NA,B,length(coefficients(reg_str))) 
 for(i in 1:B){
   set.seed(i)
@@ -96,14 +96,15 @@ nsw_fc <- data.table(date=seq(covid_dt[date==max(date)]$date+1,by="day",length.o
 nsw_cb <- rbind(nsw_dt,nsw_fc) 
 
 # melt to 'long table' for plotting purposes
-nsw_lg <- melt(nsw_cb,id.vars="date")
+nsw_lg <- melt(nsw_cb,id.vars=c("date","lower","upper"))
 
-nsw_lg$variable <- factor(nsw_lg$variable,levels=c("observed","forecast","lower","upper"),labels=c("observed data","point forecast","95% forecast interval (lower bound)","95% forecast interval (upper bound)"))
+nsw_lg$variable <- factor(nsw_lg$variable,levels=c("observed","forecast"))
 
 # plot the graph
-gg_plot <- ggplot(nsw_lg,aes(x=date,y=value,color=variable,linetype=variable))+
-  geom_line(size=.6,na.rm=T)+
-  scale_color_manual(values=c("darkgray","steelblue","indianred","indianred"))+
+gg_plot <- ggplot(nsw_lg,aes(x=date,y=value))+
+  geom_ribbon(aes(ymin=lower,ymax=upper),fill="steelblue",alpha=.25)+
+  geom_line(aes(color=variable,linetype=variable),size=.5,na.rm=T)+
+  scale_color_manual(values=c("darkgray","steelblue"))+
   scale_linetype_manual(values=c(1,5,2,2))+
   labs(title="COVID NSW",subtitle=paste("Forecast made on",format(as.Date(max(covid_dt$date)),"%d %b %Y"),"for the subsequent seven days"),x="Date",y="Daily Cases",caption="Source of the data: https://www.covidaustralia.com/cases")+
   theme_classic()+
@@ -139,7 +140,7 @@ nsw_lg <- melt(nsw_cb,id.vars="date")
 
 # plot the graph
 gg_plot <- ggplot(nsw_lg,aes(x=date,y=value,color=variable,linetype=variable))+
-  geom_line(size=.6,na.rm=T)+
+  geom_line(size=.5,na.rm=T)+
   scale_color_manual(values=c("darkgray","steelblue","indianred"))+
   scale_linetype_manual(values=c(1,5,2))+
   labs(title="COVID NSW",subtitle=paste("Forecast made on",format(as.Date(max(covid_dt$date)),"%d %b %Y"),"for the subsequent seven days"),x="Date",y="Daily Cases",caption="Source of the data: https://www.covidaustralia.com/cases")+
