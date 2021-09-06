@@ -1,7 +1,7 @@
 ---
-title: 'Smooth Transition Regression: A Brief Introduction'
+title: 'Modeling Trends with Smooth Transition Regressions'
 author: "David Ubilava"
-date: "03/09/2021"
+date: "`r format(Sys.time(),'%d %B %Y')`"
 output:
   pdf_document: default
   html_document: default
@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Smooth Transition Regression
 
-Smooth transition (auto)regression belongs to a family or regime-dependent models. In such models, we have two or more regimes. The regimes are 'connected' by some threshold or transition parameters. The connection can be instantaneous or gradual. Smooth transition regression framework offers the option of both, the instantaneous and gradual switch between  the regimes (hence the name). 
+Smooth transition (auto)regression is a member of a family of regime-dependent models. In such models, we have two or more regimes. The regimes are 'connected' by some threshold or transition parameters. The connection can be instantaneous or gradual. Smooth transition regression framework offers the option of both, the instantaneous and gradual switch between  the regimes (hence the name). 
 
 In fitting the nonlinear trend to the daily covid cases data, I use a special, indeed a rather simple, case of the smooth transition regression given by: $$y_t = \alpha+\beta G(t;\gamma,c)+\varepsilon_t,$$ where $y_t$ is the number of cases in a given day, denoted by $t$, and $G(t;\gamma,c) = (1+\exp(-\gamma(t-c)))^{-1}$ is the *logistic* smooth transition function, bounded by zero and one, where $\gamma > 0$ and $c$ are the 'smoothness' and 'centrality' parameters to be estimated; $\varepsilon_t$ is an error term with the usual assumptions
 
@@ -54,8 +54,8 @@ ggsave("illustration.png",gg_plot,device="png",dpi="retina",width=6.5,height=3.5
 This model offers several benefits:
 
 - In the early stages of the wave, it mimics the exponential trend, which has been a characteristic feature of the covid waves.
-- Each regime is a plateau, connected by a sigmoid-shaped function, which gives it an advantages over the exponential trend function when modeling daily covid cases that inevitably cannot increase indefinitely.
+- Each regime is a plateau, connected by a sigmoid-shaped function, which gives it an advantage over the exponential trend function when modeling daily covid cases that inevitably cannot increase indefinitely.
 - It has a flexibility to add as many regimes as needed, to account for reduction of daily covid cases or, indeed, multiple waves.
-- It doesn't restrict the transitions between different regimes to be of similar rate (as illustrated in the graph above).
+- It doesn't restrict the the rates of expansion and contraction (as illustrated in the graph above).
 
-The model has its caveats. The most important of these, shared by nearly all trend models of similar type, is that it cannot forecast the turning point, and it can only account for the presence of one, at least with a considerable degree of accuracy, when the turning point is 'around the corner.' 
+The model has its caveats. The most important of these, arguably shared by nearly all trend models, is that it cannot forecast the turning point, and it can only account for the presence of one, at least with a considerable degree of accuracy, when the turning point is 'around the corner.' 
