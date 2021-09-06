@@ -1,18 +1,18 @@
-# The NSW Covid Forecasting Project
+# Forecasting Daily Covid Cases in NSW
 
 ## Current Forecast
 
 ![](covid_star.png)
 
 
-## The Project Motivation
+## (My) Motivation
 
 I created this project to primarily satisfy my curiosity about the trends of the covid cases in NSW since its 2021 wave due to the 'Delta variant,' which resulted in thousands of infections, dozens of deaths despite the multi-week lockdown across the state. 
 
 But there is more to that. With this project, I have combined two important topics of my research and teaching interests. I use a variant of a smooth transition regression to fit the seemingly exponentially trending data to make short term (up to seven-days-ahead) forecasts.
 
 
-## The Data and Model
+## Data and The Model
 
 I use the data on daily cases in NSW, obtained from the [COVID Australia](https://www.covidaustralia.com/) project, which I fit to a model from a family if regime-dependent regressions, the smooth transition regression. 
 
@@ -23,7 +23,5 @@ As an example, consider a scenario where we start with zero cases in day 0; then
 ![](illustration.png)
 
 A brief introduction to the model can be found [here](str.pdf)
-
-
 
 
