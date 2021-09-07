@@ -48,7 +48,7 @@ names(theta) <- c("b","g","c")
 reg_str <- nlsLM(nsw~b*((1+exp(-g/sd(trend)*(trend-c)))^(-1)),data=covid_dt,start=theta,lower=c(-Inf,.1,-Inf),upper=c(Inf,100,Inf),control=nls.control(maxiter=1000,warnOnly=T))
 
 # the estimated logistic function
-Ghat <- ((1+exp(-coefficients(reg_str)["g"]/(sd(covid_dt$trend))*(covid_dt$trend-coefficients(reg_str)["c"])))^(-1))
+Ghat <- (1+exp(-coefficients(reg_str)["g"]/(sd(covid_dt$trend))*(covid_dt$trend-coefficients(reg_str)["c"])))^(-1)
 
 # store the fitted values into the dataset
 covid_dt$yhat_str <- coefficients(reg_str)["b"]*Ghat
@@ -100,7 +100,7 @@ nsw_lg <- melt(nsw_cb,id.vars=c("date","lower","upper"))
 nsw_lg$variable <- factor(nsw_lg$variable,levels=c("observed","forecast"))
 
 # plot the graph
-gg_plot <- ggplot(nsw_lg,aes(x=date,y=value))+
+gg_plot_str <- ggplot(nsw_lg,aes(x=date,y=value))+
   geom_ribbon(aes(ymin=lower,ymax=upper),fill="steelblue",alpha=.25)+
   geom_line(aes(color=variable,linetype=variable),size=.5,na.rm=T)+
   scale_color_manual(values=c("darkgray","steelblue"))+
@@ -110,7 +110,7 @@ gg_plot <- ggplot(nsw_lg,aes(x=date,y=value))+
   theme(axis.title=element_text(size=12),axis.text=element_text(size=10),legend.title=element_blank(),legend.text=element_text(size=8),legend.position=c(.025,1),legend.justification=c(0,1),plot.caption = element_text(color="darkgray",size=9),plot.subtitle=element_text(size=9),legend.key.size=unit(0.5,"cm"))
 
 # save the figure
-ggsave("covid_star.png",dpi="retina",width=6.5,height=3.5)
+ggsave("covid_star.png",gg_plot_str,dpi="retina",width=6.5,height=3.5)
 
 
 # print the rounded case numbers for the forecast period
@@ -140,7 +140,7 @@ nsw_lg <- melt(nsw_cb,id.vars=c("date","lower","upper"))
 nsw_lg$variable <- factor(nsw_lg$variable,levels=c("observed","logistic","exponential"))
 
 # plot the graph
-gg_plot <- ggplot(nsw_lg,aes(x=date,y=value))+
+gg_plot_comb <- ggplot(nsw_lg,aes(x=date,y=value))+
   geom_ribbon(aes(ymin=lower,ymax=upper),fill="steelblue",alpha=.25)+
   geom_line(aes(color=variable,linetype=variable),size=.5,na.rm=T)+
   scale_color_manual(values=c("darkgray","steelblue","indianred"))+
@@ -150,4 +150,4 @@ gg_plot <- ggplot(nsw_lg,aes(x=date,y=value))+
   theme(axis.title=element_text(size=12),axis.text=element_text(size=10),legend.title=element_blank(),legend.text=element_text(size=8),legend.position=c(.025,1),legend.justification=c(0,1),plot.caption = element_text(color="darkgray",size=9),plot.subtitle=element_text(size=9),legend.key.size=unit(0.5,"cm"))
 
 # save the figure
-ggsave("covid_models.png",dpi="retina",width=6.5,height=3.5)
+ggsave("covid_models.png",gg_plot_comb,dpi="retina",width=6.5,height=3.5)
